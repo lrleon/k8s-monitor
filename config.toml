@@ -1,0 +1,52 @@
+# Kubernetes Metrics Monitor Configuration
+
+[kubernetes]
+namespace = "default"
+metrics_interval = 5  # seconds
+
+[server]
+port = 8080
+host = "0.0.0.0"
+
+[prometheus]
+url = "http://prometheus.istio-system:9090"
+
+[metrics]
+# Window configuration for time-series metrics
+window_size = 60  # number of samples to keep in memory
+latency_window_minutes = 5  # minutes of latency data to keep
+request_rate_window_minutes = 5  # minutes of request rate data to keep
+
+# Statistical percentiles to calculate
+percentiles = [50.0, 95.0, 99.0]
+
+[alerting]
+enabled = true
+
+# OpsGenie configuration
+[alerting.opsgenie]
+api_key = ""  # Set via environment variable OPSGENIE_API_KEY
+api_url = "https://api.opsgenie.com"
+team = "platform-team"
+priority = "P3"
+
+# Alert thresholds
+[alerting.thresholds]
+# Memory threshold in bytes (512MB default)
+memory_threshold_bytes = 536870912
+# Latency threshold in milliseconds
+latency_p95_threshold_ms = 500.0
+latency_p99_threshold_ms = 1000.0
+
+# Alert conditions
+[alerting.conditions]
+# How long the threshold must be exceeded before alerting (seconds)
+memory_duration_seconds = 30
+latency_duration_seconds = 60
+
+# Cooldown period between alerts for the same issue (seconds)
+alert_cooldown_seconds = 300
+
+[logging]
+level = "info"
+format = "json"  # "json" or "pretty"
