@@ -1,0 +1,225 @@
+# Monitor Configuration
+# This file defines the thresholds for triggering alerts in the Kubernetes metrics monitor
+
+[general]
+# Global settings for alert evaluation
+evaluation_interval = "1m"  # How often to evaluate alerts
+default_namespace = "default"
+enabled = true
+
+# Monitoring configuration
+[monitoring]
+# Services to monitor - if empty, monitors all services in namespace
+# If specified, only these services will be monitored
+include_services = []  # e.g., ["user-service", "payment-service", "auth-service"]
+
+# Services to explicitly exclude from monitoring
+exclude_services = []  # e.g., ["debug-service", "temp-service"]
+
+# Window sizes for calculating rolling metrics
+window_sizes = { latency = 256, request_rate = 256 }
+
+# Default thresholds applied to all monitored services unless overridden
+[default_thresholds]
+# Memory usage thresholds
+[default_thresholds.memory]
+enabled = true
+warning_percent = 70.0
+critical_percent = 85.0
+duration = "1m"
+
+# CPU usage thresholds
+[default_thresholds.cpu]
+enabled = true
+warning_millicores = 800.0
+critical_millicores = 950.0
+duration = "1m"
+
+# Latency thresholds
+[default_thresholds.latency]
+enabled = true
+[default_thresholds.latency.p50]
+warning_ms = 2000.0
+critical_ms = 4000.0
+duration = "1m"
+
+[default_thresholds.latency.p95]
+warning_ms = 3000.0
+critical_ms = 6000.0
+duration = "1m"
+
+[default_thresholds.latency.p99]
+warning_ms = 4000.0
+critical_ms = 8000.0
+duration = "1m"
+
+# Request rate thresholds
+[default_thresholds.request_rate]
+enabled = true
+min_warning_rps = 0.1
+max_warning_rps = 1000.0
+max_critical_rps = 2000.0
+duration = "1m"
+
+# Pod availability thresholds
+[default_thresholds.availability]
+enabled = true
+min_healthy_pods = 1
+min_healthy_percent = 80.0
+duration = "1m"
+
+# Service-specific configurations
+# Each service can override default thresholds and monitoring settings
+[services]
+
+# Example: Critical user-facing service with strict thresholds
+[services.user-service]
+enabled = true  # Explicitly enable monitoring for this service
+namespace = "production"  # Override default namespace if needed
+window_sizes = { latency = 512, request_rate = 128 }  # Custom window sizes
+
+[services.user-service.memory]
+enabled = true
+warning_percent = 60.0
+critical_percent = 75.0
+duration = "1m"
+
+[services.user-service.cpu]
+enabled = true
+warning_millicores = 600.0
+critical_millicores = 800.0
+duration = "1m"
+
+[services.user-service.latency]
+enabled = true
+[services.user-service.latency.p50]
+warning_ms = 1000.0
+critical_ms = 2000.0
+duration = "1m"
+
+[services.user-service.latency.p95]
+warning_ms = 2000.0
+critical_ms = 3000.0
+duration = "1m"
+
+[services.user-service.latency.p99]
+warning_ms = 2500.0
+critical_ms = 4000.0
+duration = "1m"
+
+[services.user-service.request_rate]
+enabled = true
+min_warning_rps = 1.0
+max_warning_rps = 500.0
+max_critical_rps = 800.0
+duration = "1m"
+
+# Example: Batch processing service with relaxed latency requirements
+[services.batch-processor]
+enabled = true
+namespace = "batch"
+window_sizes = { latency = 64, request_rate = 64 }  # Smaller windows for batch jobs
+
+[services.batch-processor.memory]
+enabled = true
+warning_percent = 80.0
+critical_percent = 95.0
+duration = "5m"  # Longer duration for batch processes
+
+[services.batch-processor.cpu]
+enabled = true
+warning_millicores = 1500.0
+critical_millicores = 1800.0
+duration = "5m"
+
+[services.batch-processor.latency]
+enabled = true
+[services.batch-processor.latency.p50]
+warning_ms = 15000.0  # 15 seconds
+critical_ms = 30000.0  # 30 seconds
+duration = "5m"
+
+[services.batch-processor.latency.p95]
+warning_ms = 25000.0  # 25 seconds
+critical_ms = 45000.0  # 45 seconds
+duration = "5m"
+
+[services.batch-processor.latency.p99]
+warning_ms = 30000.0  # 30 seconds
+critical_ms = 60000.0  # 1 minute
+duration = "5m"
+
+[services.batch-processor.request_rate]
+enabled = false  # Disable request rate monitoring for batch jobs
+
+# Example: Monitoring service that should be excluded
+[services.prometheus]
+enabled = false  # Explicitly disable monitoring
+
+# Example: Service with only specific metrics enabled
+[services.cache-service]
+enabled = true
+namespace = "infrastructure"
+
+[services.cache-service.memory]
+enabled = true
+warning_percent = 85.0
+critical_percent = 95.0
+duration = "2m"
+
+[services.cache-service.cpu]
+enabled = false  # Don't monitor CPU for cache service
+
+[services.cache-service.latency]
+enabled = true
+[services.cache-service.latency.p50]
+warning_ms = 5.0
+critical_ms = 25.0
+duration = "1m"
+
+[services.cache-service.latency.p95]
+warning_ms = 50.0
+critical_ms = 100.0
+duration = "1m"
+
+[services.cache-service.latency.p99]
+warning_ms = 100.0
+critical_ms = 200.0
+duration = "1m"
+
+# Notification settings
+[notifications]
+enabled = true
+global_cooldown = "10m"  # Global cooldown - no alerts sent for ANY service during this period after an alert
+per_service_cooldown = "5m"  # Per-service cooldown - specific service won't send repeat alerts during this period
+channels = ["webhook", "log"]
+
+[notifications.webhook]
+enabled = true
+url = "http://alertmanager.monitoring:9093/api/v1/alerts"
+timeout = "10s"
+
+[notifications.opsgenie]
+enabled = false
+api_key = ""
+region = "us"  # "us" or "eu"
+timeout = "10s"
+
+[notifications.slack]
+enabled = false
+webhook_url = ""
+channel = "#alerts"
+
+# Severity levels
+[severity]
+[severity.warning]
+color = "yellow"
+icon = "⚠️"
+
+[severity.critical]
+color = "red"
+icon = "🚨"
+
+[severity.info]
+color = "blue"
+icon = "ℹ️"
